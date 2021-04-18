@@ -2,5 +2,5 @@ name: WorldPlayerCount
 version: "2.0-beta"
 api: 3.0.0
 author: xXKHaLeD098Xx
-depend: [Slapper]
+depend: [SimpleNPC]
 main: xXKHaLeD098Xx\WorldPlayerCount\WorldPlayerCount
