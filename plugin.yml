@@ -1,5 +1,5 @@
 name: WorldPlayerCount
-version: "2.0-beta"
+version: "3.0-beta"
 api: 5.0.0
 author: VsrStudio, xXKHaLeD098Xx
 depend: [SimpleNPC]
