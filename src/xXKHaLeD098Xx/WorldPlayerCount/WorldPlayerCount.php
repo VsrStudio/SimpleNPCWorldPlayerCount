@@ -95,7 +95,6 @@ class WorldPlayerCount extends PluginBase implements Listener {
     }
 
     public function onSlapperDeletion(SNPCDeletionEvent $event): void{
-
         // single world
         if($event->getEntity()->namedtag->hasTag("playerCount")){
             $tag = $event->getEntity()->namedtag->getString("playerCount");
@@ -126,7 +125,7 @@ class WorldPlayerCount extends PluginBase implements Listener {
         $entity = $event->getEntity();
 
         if(($entity instanceof BaseNPC || $entity instanceof CustomHuman) and $damager instanceof Player){
-            if(isset($slapper->hitSessions[$damager->getName()])){
+            if(isset($slapper->hitSessions[$damager->getName()])){ 
                 $slapperDelete = new SNPCDeletionEvent($event->getEntity());
                 $slapperDelete->call();
             }
@@ -193,38 +192,4 @@ class WorldPlayerCount extends PluginBase implements Listener {
             $entities = $level->getEntities();
             foreach($entities as $entity){
                 $nbt = $entity->namedtag;
-                if($nbt->hasTag("playerCount") && !$nbt->hasTag("combinedPlayerCounts")){
-                    $world = $nbt->getString("playerCount");
-                    $allines = explode("\n", $entity->getNameTag());
-                    if(file_exists($this->getServer()->getDataPath() . "/worlds/" . $world)){
-                        if($this->getServer()->isLevelLoaded($world)){
-                            $worlds = $this->getConfig()->get("worlds");
-                            if(!in_array($world, $worlds, true)){
-                                $worlds[] = $world;
-                                $this->getConfig()->set("worlds", $worlds);
-                                $this->getConfig()->save();
-                            }
-                            $countPlayers = count($this->getServer()->getLevelByName($world)->getPlayers());
-                            $count = $this->getConfig()->get("count");
-                            $str = str_replace("{number}", $countPlayers, $count);
-                            $entity->setNameTag($allines[0] . "\n" . $str);
-                        }else{
-                            $worlds = $this->getConfig()->get("worlds");
-                            if(!in_array($world, $worlds, true)){
-                                $worlds[] = $world;
-                                $this->getConfig()->set("worlds", $worlds);
-                                $this->getConfig()->save();
-                            }
-                            $this->getServer()->loadLevel($world);
-                        }
-                    }else{
-                        $slapperDelete = new SNPCDeletionEvent($entity);
-                        $slapperDelete->call();
-                        $entity->close();
-                    }
-                }
-            }
-        }
-    }
-}
-
+                if($nbt->hasTag("playerCount") && !$nbt->hasTag("combined
