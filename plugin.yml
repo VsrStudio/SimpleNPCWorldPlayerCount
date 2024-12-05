@@ -1,6 +1,6 @@
 name: WorldPlayerCount
 version: "3.0-beta"
 api: 5.0.0
-author: VsrStudio, xXKHaLeD098Xx
+author: xXKHaLeD098Xx, VsrStudio
 depend: [SimpleNPC]
 main: xXKHaLeD098Xx\WorldPlayerCount\WorldPlayerCount
