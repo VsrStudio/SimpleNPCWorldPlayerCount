@@ -1,11 +1,12 @@
 <?php
 
-/* Credits: xXKHaLeD098Xx
-* Discord: кнαℓє∂#7787
+/* Credits: xXKHaLeD098Xx, VsrStudio
+* Discord: https://discord.gg/PMEBQHGy
 */
 
 namespace xXKHaLeD098Xx\WorldPlayerCount;
 
+use pocketmine\player\Player;
 use brokiem\snpc\entity\BaseNPC;
 use brokiem\snpc\entity\CustomHuman;
 use brokiem\snpc\event\SNPCCreationEvent;
@@ -16,7 +17,6 @@ use pocketmine\event\Listener;
 use pocketmine\plugin\Plugin;
 use pocketmine\plugin\PluginBase;
 use xXKHaLeD098Xx\WorldPlayerCount\Task\RefreshCount;
-use pocketmine\Player;
 
 class WorldPlayerCount extends PluginBase implements Listener {
 
