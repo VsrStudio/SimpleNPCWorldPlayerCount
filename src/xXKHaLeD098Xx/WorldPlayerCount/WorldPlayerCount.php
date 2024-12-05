@@ -77,7 +77,7 @@ class WorldPlayerCount extends PluginBase implements Listener {
                     }
                 }
             }
-            //Multi-world
+
             $combinedPos = strpos($allines[1], "combinedcounts ");
             if($combinedPos !== false){
                 $symbolPos = strpos($allines[1], "&");
@@ -95,7 +95,7 @@ class WorldPlayerCount extends PluginBase implements Listener {
     }
 
     public function onSlapperDeletion(SNPCDeletionEvent $event): void{
-        // single world
+        
         if($event->getEntity()->namedtag->hasTag("playerCount")){
             $tag = $event->getEntity()->namedtag->getString("playerCount");
             $event->getEntity()->namedtag->removeTag("playerCount");
@@ -131,8 +131,6 @@ class WorldPlayerCount extends PluginBase implements Listener {
             }
         }
     }
-
-    // here no single world allowed, only combined ones
 
     public function combinedPlayerCounts(): void {
     $worlds = $this->getServer()->getWorldManager()->getWorlds();
