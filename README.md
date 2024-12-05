@@ -7,6 +7,7 @@ A simple PocketMine addon plugin for SimpleNPC which allows you to create a Simp
 - v2.0-beta
   - Added combined world player count support!
   - Added customizable count-check interval, see the config
+  - Remake To Api5 Plugins @VsrStudio
 ## Usage for single world
 __Note: This is used when creating a snpc counting the players of 1 world only__
 - First thing we add after the entity type (human) is the nametag we want, followed by a {line} tag then adding "count WORLDNAME"<br><br>
