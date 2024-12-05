@@ -134,81 +134,88 @@ class WorldPlayerCount extends PluginBase implements Listener {
 
     // here no single world allowed, only combined ones
 
-    public function combinedPlayerCounts(): void{
-        $levels = $this->getServer()->getLevels();
-        foreach($levels as $level){
-            foreach($level->getEntities() as $entity){
-                $nbt = $entity->namedtag;
-                if($nbt->hasTag("combinedPlayerCounts") && !$nbt->hasTag("playerCount")){
-                    $worldsNames = explode("&", $nbt->getString("combinedPlayerCounts"));
-                    foreach($worldsNames as $name){
-                        if(!file_exists($this->getServer()->getDataPath() . "/worlds/" . $name)){
-                            unset($worldsNames[array_search($name, $worldsNames, true)]);
-                            $slapperDelete = new SNPCDeletionEvent($entity);
-                            $slapperDelete->call();
-                            $entity->close();
+    public function combinedPlayerCounts(): void {
+    $worlds = $this->getServer()->getWorldManager()->getWorlds();
+    foreach($worlds as $world) {
+        foreach($world->getEntities() as $entity) {
+            $nbt = $entity->namedtag;
+            
+            if ($nbt->hasTag("combinedPlayerCounts") && !$nbt->hasTag("playerCount")) {
+                $worldsNames = explode("&", $nbt->getString("combinedPlayerCounts"));
+                
+                foreach ($worldsNames as $name) {
+                    if (!file_exists($this->getServer()->getDataPath() . "/worlds/" . $name)) {
+                        unset($worldsNames[array_search($name, $worldsNames, true)]);
+                        $slapperDelete = new SNPCDeletionEvent($entity);
+                        $slapperDelete->call();
+                        $entity->close();
+                    }
+                }
+
+                if (count($worldsNames) > 1) {
+                    $counts = 0;
+                    
+                    foreach ($worldsNames as $name) {
+                        if (empty($name)) {
+                            continue;
+                        }
+                        
+                        if ($this->getServer()->isLevelLoaded($name)) {
+                            $worldsConfig = $this->getConfig()->get("worlds");
+                            
+                            if (!in_array($name, $worldsConfig, true)) {
+                                $worldsConfig[] = $name;
+                                $this->getConfig()->set("worlds", $worldsConfig);
+                                $this->getConfig()->save();
+                            }
+
+                            $pmLevel = $this->getServer()->getLevelByName($name);
+                            $countOfLevel = count($pmLevel->getPlayers());
+                            $counts += $countOfLevel;
+                        } else {
+                            $worldsConfig = $this->getConfig()->get("worlds");
+                            if (!in_array($name, $worldsConfig, true)) {
+                                $worldsConfig[] = $name;
+                                $this->getConfig()->set("worlds", $worldsConfig);
+                                $this->getConfig()->save();
+                            }
+                            $this->getServer()->loadLevel($name);
                         }
                     }
-                    // extra checks just in case
-                    if(count($worldsNames) > 1){
-                        $counts = 0;
-                        foreach($worldsNames as $name){
-                            if($name === ""){
-                                continue;
-                            }
-                            if($this->getServer()->isLevelLoaded($name)){
-                                $worlds = $this->getConfig()->get("worlds");
-                                if(!in_array($name, $worlds, true)){
-                                    $worlds[] = $name;
-                                    $this->getConfig()->set("worlds", $worlds);
-                                    $this->getConfig()->save();
-                                }
-                                $pmLevel = $this->getServer()->getLevelByName($name);
-                                $countOfLevel = count($pmLevel->getPlayers());
-                                $counts += $countOfLevel;
-                            }else{
-                                $worlds = $this->getConfig()->get("worlds");
-                                if(!in_array($name, $worlds, true)){
-                                    $worlds[] = $name;
-                                    $this->getConfig()->set("worlds", $worlds);
-                                    $this->getConfig()->save();
-                                }
-                                $this->getServer()->loadLevel($name);
-                            }
-                        }
-                        $count = $this->getConfig()->get("count");
-                        $str = str_replace("{number}", $counts, $count);
-                        $allines = explode("\n", $entity->getNameTag());
-                        $entity->setNameTag($allines[0] . "\n" . $str);
-                    }
+                    
+                    $count = $this->getConfig()->get("count");
+                    $str = str_replace("{number}", $counts, $count);
+                    $allines = explode("\n", $entity->getNameTag());
+                    $entity->setNameTag($allines[0] . "\n" . $str);
                 }
             }
         }
     }
+}
 
-    public function playerCount(): void{
-        $levels = $this->getServer()->getLevels();
-        foreach($levels as $level){
-            $entities = $level->getEntities();
-            foreach($entities as $entity){
-                $nbt = $entity->namedtag;
-                if($nbt->hasTag("playerCount") && !$nbt->hasTag("combinedPlayerCounts")){
-                    $levelName = $nbt->getString("playerCount");
-                    if($this->getServer()->isLevelLoaded($levelName)){
-                        $level = $this->getServer()->getLevelByName($levelName);
-                        $count = count($level->getPlayers());
-                        $countStr = str_replace("{number}", $count, $this->getConfig()->get("count"));
-                        $lines = explode("\n", $entity->getNameTag());
-                        $entity->setNameTag($lines[0] . "\n" . $countStr);
-                    } else {
-                        $this->getServer()->loadLevel($levelName);
-                    }
+    public function playerCount(): void {
+    $worlds = $this->getServer()->getWorldManager()->getWorlds();
+    foreach($worlds as $world){
+        $entities = $world->getEntities();
+        foreach($entities as $entity){
+            $nbt = $entity->namedtag;
+            if($nbt->hasTag("playerCount") && !$nbt->hasTag("combinedPlayerCounts")){
+                $levelName = $nbt->getString("playerCount");
+                if($this->getServer()->isLevelLoaded($levelName)){
+                    $level = $this->getServer()->getLevelByName($levelName);
+                    $count = count($level->getPlayers());
+                    $countStr = str_replace("{number}", $count, $this->getConfig()->get("count"));
+                    $lines = explode("\n", $entity->getNameTag());
+                    $entity->setNameTag($lines[0] . "\n" . $countStr);
+                } else {
+                    $this->getServer()->loadLevel($levelName);
                 }
             }
         }
     }
+}
 
-    public function onDisable(): void {
-        $this->getLogger()->info("WorldPlayerCount plugin has been disabled.");
-    }
+public function onDisable(): void {
+    $this->getLogger()->info("WorldPlayerCount plugin has been disabled.");
+}
 }
