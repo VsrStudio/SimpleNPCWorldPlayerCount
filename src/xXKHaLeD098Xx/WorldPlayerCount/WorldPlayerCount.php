@@ -192,4 +192,23 @@ class WorldPlayerCount extends PluginBase implements Listener {
             $entities = $level->getEntities();
             foreach($entities as $entity){
                 $nbt = $entity->namedtag;
-                if($nbt->hasTag("playerCount") && !$nbt->hasTag("combined
+                if($nbt->hasTag("playerCount") && !$nbt->hasTag("combinedPlayerCounts")){
+                    $levelName = $nbt->getString("playerCount");
+                    if($this->getServer()->isLevelLoaded($levelName)){
+                        $level = $this->getServer()->getLevelByName($levelName);
+                        $count = count($level->getPlayers());
+                        $countStr = str_replace("{number}", $count, $this->getConfig()->get("count"));
+                        $lines = explode("\n", $entity->getNameTag());
+                        $entity->setNameTag($lines[0] . "\n" . $countStr);
+                    } else {
+                        $this->getServer()->loadLevel($levelName);
+                    }
+                }
+            }
+        }
+    }
+
+    public function onDisable(): void {
+        $this->getLogger()->info("WorldPlayerCount plugin has been disabled.");
+    }
+}
