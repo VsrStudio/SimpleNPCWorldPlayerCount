@@ -14,6 +14,7 @@ use brokiem\snpc\event\SNPCDeletionEvent;
 use brokiem\snpc\SimpleNPC;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityEvent;
+use pocketmine\entity\Entity;
 use pocketmine\event\Listener;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\world\WorldManager;
@@ -90,9 +91,9 @@ public function getSlapper(): ?SimpleNPC {
                     $worldManager->loadWorld($levelName);
                 }
 
-                $namedTag = $entity->getNamedTag();
-                $namedTag->setString("playerCount", $levelName);
-                $entity->setNamedTag($namedTag);
+                $entityData = $entity->getEntityData();
+                $entityData->setString("playerCount", $levelName);
+                $entity->setEntityData($entityData);
 
                 $worlds = $this->getConfig()->get("worlds");
                 if (!in_array($levelName, $worlds, true)) {
@@ -204,7 +205,7 @@ public function getSlapper(): ?SimpleNPC {
                                 $this->getConfig()->save();
                             }
 
-                            $pmLevel = $this->getServer()->getLevelByName($name);
+                            $level = $this->getServer()->getLevelByName($levelName);
                             $countOfLevel = count($pmLevel->getPlayers());
                             $counts += $countOfLevel;
                         } else {
