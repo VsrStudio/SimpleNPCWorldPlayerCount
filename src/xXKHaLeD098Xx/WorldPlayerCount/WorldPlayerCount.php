@@ -155,7 +155,7 @@ public function getSlapper(): ?SimpleNPC {
     }
 
     public function combinedPlayerCounts(): void {
-   $world = $this->getServer()->getWorldManager()->getWorldByName($name);
+   $worlds = $this->getServer()->getWorldManager()->getWorlds();
     foreach($worlds as $world) {
         foreach($world->getEntities() as $entity) {
             $nbt = $entity->namedtag;
@@ -214,7 +214,7 @@ public function getSlapper(): ?SimpleNPC {
 }
 
     public function playerCount(): void {
-    $world = $this->getServer()->getWorldManager()->getWorldByName($name);
+     $worlds = $this->getServer()->getWorldManager()->getWorlds();
     foreach($worlds as $world){
         $entities = $world->getEntities();
         foreach($entities as $entity){
