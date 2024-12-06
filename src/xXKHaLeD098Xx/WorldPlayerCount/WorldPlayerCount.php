@@ -20,22 +20,22 @@ use xXKHaLeD098Xx\WorldPlayerCount\Task\RefreshCount;
 
 class WorldPlayerCount extends PluginBase implements Listener {
 
-    /** @return SimpleNPC */
-    public function getSlapper(): Plugin{
-        return $this->getServer()->getPluginManager()->getPlugin("SimpleNPC");
-    }
-
+   /** @return SimpleNPC|null */
+public function getSlapper(): ?SimpleNPC {
+    $plugin = $this->getServer()->getPluginManager()->getPlugin("SimpleNPC");
+    return $plugin instanceof SimpleNPC ? $plugin : null;
+}
     public function onEnable(): void{
         $map = $this->getDescription()->getMap();
         $ver = $this->getDescription()->getVersion();
         if(isset($map["author"])){
-            if($map["author"] !== "xXKHaLeD098Xx" or $ver !== "2.0-beta"){
-                $this->getLogger()->emergency("§cPlugin info has been changed, please give the author the proper credits, set the author to \"xXKHaLeD098Xx\" and setting the version to \"2.0-beta\" if required, or else the server will shutdown on every start-up");
+            if($map["author"] !== "xXKHaLeD098Xx, VsrStudio" or $ver !== "3.0-beta"){
+                $this->getLogger()->emergency("§cPlugin info has been changed, please give the author the proper credits, set the author to \"xXKHaLeD098Xx, VsrStudio\" and setting the version to \"3.0-beta\" if required, or else the server will shutdown on every start-up");
                 $this->getServer()->shutdown();
                 return;
             }
         }else{
-            $this->getLogger()->emergency("§cPlugin info has been changed, please give the author the proper credits, set the author to \"xXKHaLeD098Xx\" and setting the version to \"2.0-beta\" if required, or else the server will shutdown on every start-up");
+            $this->getLogger()->emergency("§cPlugin info has been changed, please give the author the proper credits, set the author to \"xXKHaLeD098Xx, VsrStudio\" and setting the version to \"3.0-beta\" if required, or else the server will shutdown on every start-up");
             $this->getServer()->shutdown();
         }
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
@@ -94,31 +94,39 @@ class WorldPlayerCount extends PluginBase implements Listener {
         }
     }
 
-    public function onSlapperDeletion(SNPCDeletionEvent $event): void{
-        
-        if($event->getEntity()->namedtag->hasTag("playerCount")){
-            $tag = $event->getEntity()->namedtag->getString("playerCount");
-            $event->getEntity()->namedtag->removeTag("playerCount");
-            $worlds = $this->getConfig()->get("worlds");
-            unset($worlds[array_search($tag, $worlds, true)]);
-            $this->getConfig()->set("worlds", $worlds);
-            $this->getConfig()->save();
-        }
-        // combined
-        if($event->getEntity()->namedtag->hasTag("combinedPlayerCounts")){
-            $tag = $event->getEntity()->namedtag->getString("combinedPlayerCounts");
-            $event->getEntity()->namedtag->removeTag("combinedPlayerCounts");
-            $worlds = $this->getConfig()->get("worlds");
-            $arrayOfNames = explode("&", $tag);
-            foreach($arrayOfNames as $name){
-                if(in_array($name, $worlds, true)){
-                    unset($worlds[array_search($name, $worlds, true)]);
-                    $this->getConfig()->set("worlds", $worlds);
-                    $this->getConfig()->save();
-                }
+    public function onSlapperDeletion(SNPCDeletionEvent $event): void {
+    $entity = $event->getEntity();
+    $namedTag = $entity->getNamedTag();
+
+    if ($namedTag->getTag("playerCount") !== null) {
+        $tag = $namedTag->getString("playerCount");
+        $namedTag->removeTag("playerCount");
+        $entity->setNamedTag($namedTag);
+
+        $worlds = $this->getConfig()->get("worlds", []);
+        unset($worlds[array_search($tag, $worlds, true)]);
+        $this->getConfig()->set("worlds", $worlds);
+        $this->getConfig()->save();
+    }
+
+    if ($namedTag->getTag("combinedPlayerCounts") !== null) {
+        $tag = $namedTag->getString("combinedPlayerCounts");
+        $namedTag->removeTag("combinedPlayerCounts");
+        $entity->setNamedTag($namedTag);
+
+        $worlds = $this->getConfig()->get("worlds", []);
+        $arrayOfNames = explode("&", $tag);
+
+        foreach ($arrayOfNames as $name) {
+            if (in_array($name, $worlds, true)) {
+                unset($worlds[array_search($name, $worlds, true)]);
             }
         }
+
+        $this->getConfig()->set("worlds", $worlds);
+        $this->getConfig()->save();
     }
+}
 
     public function DamageEvent(EntityDamageByEntityEvent $event): void{
         $damager = $event->getDamager();
