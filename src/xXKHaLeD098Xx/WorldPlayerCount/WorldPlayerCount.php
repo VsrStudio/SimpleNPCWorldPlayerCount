@@ -28,34 +28,49 @@ public function getSlapper(): ?SimpleNPC {
     $plugin = $this->getServer()->getPluginManager()->getPlugin("SimpleNPC");
     return $plugin instanceof SimpleNPC ? $plugin : null;
 }
-    public function onEnable(): void{
-        $map = $this->getDescription()->getMap();
-        $ver = $this->getDescription()->getVersion();
-        if(isset($map["author"])){
-            if($map["author"] !== "xXKHaLeD098Xx, VsrStudio" or $ver !== "3.0-beta"){
-                $this->getLogger()->emergency("§cPlugin info has been changed, please give the author the proper credits, set the author to \"xXKHaLeD098Xx, VsrStudio\" and setting the version to \"3.0-beta\" if required, or else the server will shutdown on every start-up");
-                $this->getServer()->shutdown();
-                return;
-            }
-        }else{
-            $this->getLogger()->emergency("§cPlugin info has been changed, please give the author the proper credits, set the author to \"xXKHaLeD098Xx, VsrStudio\" and setting the version to \"3.0-beta\" if required, or else the server will shutdown on every start-up");
+    public function onEnable(): void {
+    $map = $this->getDescription()->getMap();
+    $ver = $this->getDescription()->getVersion();
+    
+    // Mengecek informasi plugin
+    if (isset($map["author"])) {
+        if ($map["author"] !== "xXKHaLeD098Xx, VsrStudio" or $ver !== "3.0-beta") {
+            $this->getLogger()->emergency("§cPlugin info has been changed, please give the author the proper credits, set the author to \"xXKHaLeD098Xx, VsrStudio\" and set the version to \"3.0-beta\" if required, or else the server will shutdown on every start-up");
             $this->getServer()->shutdown();
+            return;
         }
-        $this->getServer()->getPluginManager()->registerEvents($this, $this);
-        $this->saveDefaultConfig();
-        $this->saveResource("config.yml");
-        $this->getScheduler()->scheduleRepeatingTask(new RefreshCount($this), (int)$this->getConfig()->get("count-interval") * 20);
-        $worlds = $this->getConfig()->get("worlds");
-        foreach($worlds as $key => $world){
-            if(file_exists($this->getServer()->getDataPath() . "/worlds/" . $world)){
-                $this->getServer()->loadLevel($world);
-            }else{
-                unset($worlds[$key]);
-                $this->getConfig()->set("worlds", $worlds);
-                $this->getConfig()->save();
+    } else {
+        $this->getLogger()->emergency("§cPlugin info has been changed, please give the author the proper credits, set the author to \"xXKHaLeD098Xx, VsrStudio\" and set the version to \"3.0-beta\" if required, or else the server will shutdown on every start-up");
+        $this->getServer()->shutdown();
+    }
+
+    // Mendaftarkan event dan menyimpan konfigurasi
+    $this->getServer()->getPluginManager()->registerEvents($this, $this);
+    $this->saveDefaultConfig();
+    $this->saveResource("config.yml");
+
+    // Menjadwalkan task untuk refresh count
+    $this->getScheduler()->scheduleRepeatingTask(new RefreshCount($this), (int)$this->getConfig()->get("count-interval") * 20);
+
+    // Memuat dunia
+    $worlds = $this->getConfig()->get("worlds");
+    $worldManager = $this->getServer()->getWorldManager(); // Mendapatkan WorldManager
+    
+    foreach ($worlds as $key => $world) {
+        $worldPath = $this->getServer()->getDataPath() . "/worlds/" . $world;
+        
+        // Mengecek apakah dunia ada, kemudian memuatnya jika belum dimuat
+        if (file_exists($worldPath)) {
+            if (!$worldManager->isWorldLoaded($world)) {
+                $worldManager->loadWorld($world);
             }
+        } else {
+            unset($worlds[$key]);
+            $this->getConfig()->set("worlds", $worlds);
+            $this->getConfig()->save();
         }
     }
+}
 
     public function slapperCreation(SNPCCreationEvent $ev): void {
     $entity = $ev->getEntity();
