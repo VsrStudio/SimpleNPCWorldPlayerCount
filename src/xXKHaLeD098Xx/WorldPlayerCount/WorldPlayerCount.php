@@ -87,9 +87,9 @@ class WorldPlayerCount extends PluginBase implements Listener {
                         $worldManager->loadWorld($levelName);
                     }
 
-                    $namedTag = $entity->getNamedTag();
-                    $namedTag->setString("playerCount", $levelName);
-                    $entity->setNamedTag($namedTag);
+                    $nbt = $entity->getEntityData();
+                    $nbt->setInt("playerCount", $count);
+                    $entity->setEntityData($nbt);
 
                     $worlds = $this->getConfig()->get("worlds");
                     if (!in_array($levelName, $worlds, true)) {
@@ -109,9 +109,9 @@ class WorldPlayerCount extends PluginBase implements Listener {
                     $levelNamesArray = explode("&", $levelNamesString);
 
                     if (!in_array("", $levelNamesArray, true)) {
-                        $namedTag = $entity->getNamedTag();
-                        $namedTag->setString("combinedPlayerCounts", $levelNamesString);
-                        $entity->setNamedTag($namedTag);
+                        $nbt = $entity->getEntityData();
+                        $nbt->setInt("combinedPlayerCounts", $count);
+                        $entity->setEntityData($nbt);
 
                         $this->combinedPlayerCounts();
                     }
@@ -120,39 +120,39 @@ class WorldPlayerCount extends PluginBase implements Listener {
         }
     }
 
-    public function onSlapperDeletion(SNPCDeletionEvent $event): void {
-        $entity = $event->getEntity();
-        $namedTag = $entity->getNamedTag();
+   public function onSlapperDeletion(SNPCDeletionEvent $event): void {
+    $entity = $event->getEntity();
+    $nbt = $entity->getEntityData();
 
-        if ($namedTag->getTag("playerCount") !== null) {
-            $tag = $namedTag->getString("playerCount");
-            $namedTag->removeTag("playerCount");
-            $entity->setNamedTag($namedTag);
+    if ($nbt->getTag("playerCount") !== null) {
+        $tag = $nbt->getString("playerCount");
+        $nbt->removeTag("playerCount");
+        $entity->setEntityData($nbt);
 
-            $worlds = $this->getConfig()->get("worlds", []);
-            unset($worlds[array_search($tag, $worlds, true)]);
-            $this->getConfig()->set("worlds", $worlds);
-            $this->getConfig()->save();
-        }
-
-        if ($namedTag->getTag("combinedPlayerCounts") !== null) {
-            $tag = $namedTag->getString("combinedPlayerCounts");
-            $namedTag->removeTag("combinedPlayerCounts");
-            $entity->setNamedTag($namedTag);
-
-            $worlds = $this->getConfig()->get("worlds", []);
-            $arrayOfNames = explode("&", $tag);
-
-            foreach ($arrayOfNames as $name) {
-                if (in_array($name, $worlds, true)) {
-                    unset($worlds[array_search($name, $worlds, true)]);
-                }
-            }
-
-            $this->getConfig()->set("worlds", $worlds);
-            $this->getConfig()->save();
-        }
+        $worlds = $this->getConfig()->get("worlds", []);
+        unset($worlds[array_search($tag, $worlds, true)]);
+        $this->getConfig()->set("worlds", $worlds);
+        $this->getConfig()->save();
     }
+
+    if ($nbt->getTag("combinedPlayerCounts") !== null) {
+        $tag = $nbt->getString("combinedPlayerCounts");
+        $nbt->removeTag("combinedPlayerCounts");
+        $entity->setEntityData($nbt);
+
+        $worlds = $this->getConfig()->get("worlds", []);
+        $arrayOfNames = explode("&", $tag);
+
+        foreach ($arrayOfNames as $name) {
+            if (in_array($name, $worlds, true)) {
+                unset($worlds[array_search($name, $worlds, true)]);
+            }
+        }
+
+        $this->getConfig()->set("worlds", $worlds);
+        $this->getConfig()->save();
+    }
+}
 
     public function DamageEvent(EntityDamageByEntityEvent $event): void {
         $damager = $event->getDamager();
@@ -168,57 +168,56 @@ class WorldPlayerCount extends PluginBase implements Listener {
     }
 
     public function combinedPlayerCounts(): void {
-        $worlds = $this->getServer()->getWorldManager()->getWorlds();
-        foreach ($worlds as $world) {
-            foreach ($world->getEntities() as $entity) {
-                $nbt = $entity->getNamedTag();
+    $worlds = $this->getServer()->getWorldManager()->getWorlds();
+    foreach ($worlds as $world) {
+        foreach ($world->getEntities() as $entity) {
+            $nbt = $entity->getEntityData();
 
-                if ($nbt->hasTag("combinedPlayerCounts") && !$nbt->hasTag("playerCount")) {
-                    $worldsNames = explode("&", $nbt->getString("combinedPlayerCounts"));
+            if ($nbt->hasTag("combinedPlayerCounts") && !$nbt->hasTag("playerCount")) {
+                $worldsNames = explode("&", $nbt->getString("combinedPlayerCounts"));
+
+                foreach ($worldsNames as $name) {
+                    if (!file_exists($this->getServer()->getDataPath() . "/worlds/" . $name)) {
+                        unset($worldsNames[array_search($name, $worldsNames, true)]);
+                        $slapperDelete = new SNPCDeletionEvent($entity);
+                        $slapperDelete->call();
+                        $entity->close();
+                    }
+                }
+
+                if (count($worldsNames) > 1) {
+                    $counts = 0;
 
                     foreach ($worldsNames as $name) {
-                        if (!file_exists($this->getServer()->getDataPath() . "/worlds/" . $name)) {
-                            unset($worldsNames[array_search($name, $worldsNames, true)]);
-                            $slapperDelete = new SNPCDeletionEvent($entity);
-                            $slapperDelete->call();
-                            $entity->close();
+                        if (empty($name)) {
+                            continue;
+                        }
+
+                        if ($this->getServer()->isWorldLoaded($name)) {
+                            $worldsConfig = $this->getConfig()->get("worlds");
+
+                            if (!in_array($name, $worldsConfig, true)) {
+                                $worldsConfig[] = $name;
+                                $this->getConfig()->set("worlds", $worldsConfig);
+                                $this->getConfig()->save();
+                            }
+
+                            $level = $this->getServer()->getWorldManager()->getWorldByName($name);
+                            $counts += $level->getPlayers()->count();
                         }
                     }
 
-                    if (count($worldsNames) > 1) {
-                        $counts = 0;
-
-                        foreach ($worldsNames as $name) {
-                            if (empty($name)) {
-                                continue;
-                            }
-
-                            if ($this->getServer()->isLevelLoaded($name)) {
-                                $worldsConfig = $this->getConfig()->get("worlds");
-
-                                if (!in_array($name, $worldsConfig, true)) {
-                                    $worldsConfig[] = $name;
-                                    $this->getConfig()->set("worlds", $worldsConfig);
-                                    $this->getConfig()->save();
-                                }
-                               
-                                $level = $this->getServer()->getWorldManager()->getWorldByName($name);
-                                $counts += $level->getPlayers()->count();
-                            }
-                        }
-
-                        if ($counts > 0) {
-                            $entity->setNameTag("Player Count: " . $counts);
-                            $entity->setCustomName("Player Count: " . $counts);
-                            $nbt->setInt("playerCount", $counts);
-                            $entity->setNamedTag($nbt);
-                        }
+                    if ($counts > 0) {
+                        $entity->setCustomName("Player Count: " . $counts);
+                        $nbt->setInt("playerCount", $counts);
+                        $entity->setEntityData($nbt);
                     }
                 }
             }
         }
     }
-
+}
+    
     public function onPlayerJoin(EntityEvent $event): void {
         $player = $event->getEntity();
         if (!$player instanceof Player) {
@@ -249,16 +248,15 @@ class WorldPlayerCount extends PluginBase implements Listener {
     }
 
     public function updateNPCCount(string $worldName, int $count): void {
-        $slapper = $this->getSlapper();
-        if ($slapper !== null) {
-            foreach ($slapper->getNPCs() as $npc) {
-                $namedTag = $npc->getNamedTag();
-                if ($namedTag->hasTag("playerCount") && $namedTag->getString("playerCount") === $worldName) {
-                    $npc->setNameTag("World: $worldName | Players: $count");
-                    $npc->setCustomName("World: $worldName | Players: $count");
-                    $namedTag->setInt("playerCount", $count);
-                    $npc->setNamedTag($namedTag);
-                }
+    $slapper = $this->getSlapper();
+    if ($slapper !== null) {
+        foreach ($slapper->getAllNPCs() as $npc) { 
+            $entityData = $npc->getEntityData();
+            if ($entityData->hasTag("playerCount") && $entityData->getString("playerCount") === $worldName) {
+                $npc->setCustomName("World: $worldName | Players: $count");
+                $npc->setNameTag("World: $worldName | Players: $count");
+                $entityData->setInt("playerCount", $count);
+                $npc->setEntityData($entityData);
             }
         }
     }
