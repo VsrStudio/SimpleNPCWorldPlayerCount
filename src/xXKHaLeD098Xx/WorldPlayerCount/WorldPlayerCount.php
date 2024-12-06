@@ -13,7 +13,10 @@ use brokiem\snpc\event\SNPCCreationEvent;
 use brokiem\snpc\event\SNPCDeletionEvent;
 use brokiem\snpc\SimpleNPC;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
+use pocketmine\event\entity\EntityEvent;
 use pocketmine\event\Listener;
+use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\world\WorldManager;
 use pocketmine\plugin\Plugin;
 use pocketmine\plugin\PluginBase;
 use xXKHaLeD098Xx\WorldPlayerCount\Task\RefreshCount;
@@ -54,45 +57,56 @@ public function getSlapper(): ?SimpleNPC {
         }
     }
 
-    public function slapperCreation(SNPCCreationEvent $ev): void{
-        $entity = $ev->getEntity();
-        $name = $entity->getNameTag();
-        if(strpos($name, "\n") !== false){
-            $allines = explode("\n", $name);
-            $pos = strpos($allines[1], "count ");
-            if($pos !== false){
-                //Single world
-                $levelname = str_replace("count ", "", $allines[1]);
-                if(file_exists($this->getServer()->getDataPath() . "/worlds/" . $levelname)){
-                    if(!$this->getServer()->isLevelLoaded($levelname)){
-                        $this->getServer()->loadLevel($levelname);
-                    }
-                    $entity->namedtag->setString("playerCount", $levelname);
-                    $worlds = $this->getConfig()->get("worlds");
-                    if(!in_array($levelname, $worlds, true)){
-                        $worlds[] = $levelname;
-                        $this->getConfig()->set("worlds", $worlds);
-                        $this->getConfig()->save();
-                        return;
-                    }
-                }
-            }
+    public function slapperCreation(SNPCCreationEvent $ev): void {
+    $entity = $ev->getEntity();
+    $name = $entity->getNameTag();
+    $worldManager = $this->getServer()->getWorldManager();
 
-            $combinedPos = strpos($allines[1], "combinedcounts ");
-            if($combinedPos !== false){
-                $symbolPos = strpos($allines[1], "&");
-                if($symbolPos !== false){
-                    $levelnameS = str_replace("combinedcounts ", "", $allines[1]);
-                    $levelnamesInArray = explode("&", $levelnameS);
-                    if(in_array("", $levelnamesInArray, true)){
-                        return;
-                    }
-                    $entity->namedtag->setString("combinedPlayerCounts", $levelnameS);
+    if (strpos($name, "\n") !== false) {
+        $allLines = explode("\n", $name);
+
+        $pos = strpos($allLines[1], "count ");
+        if ($pos !== false) {
+            $levelName = str_replace("count ", "", $allLines[1]);
+            $worldPath = $this->getServer()->getDataPath() . "worlds/" . $levelName;
+
+            if (is_dir($worldPath)) {
+                if (!$worldManager->isWorldLoaded($levelName)) {
+                    $worldManager->loadWorld($levelName);
+                }
+
+                $namedTag = $entity->getNamedTag();
+                $namedTag->setString("playerCount", $levelName);
+                $entity->setNamedTag($namedTag);
+
+                $worlds = $this->getConfig()->get("worlds");
+                if (!in_array($levelName, $worlds, true)) {
+                    $worlds[] = $levelName;
+                    $this->getConfig()->set("worlds", $worlds);
+                    $this->getConfig()->save();
+                }
+                return;
+            }
+        }
+
+        $combinedPos = strpos($allLines[1], "combinedcounts ");
+        if ($combinedPos !== false) {
+            $symbolPos = strpos($allLines[1], "&");
+            if ($symbolPos !== false) {
+                $levelNamesString = str_replace("combinedcounts ", "", $allLines[1]);
+                $levelNamesArray = explode("&", $levelNamesString);
+
+                if (!in_array("", $levelNamesArray, true)) {
+                    $namedTag = $entity->getNamedTag();
+                    $namedTag->setString("combinedPlayerCounts", $levelNamesString);
+                    $entity->setNamedTag($namedTag);
+
                     $this->combinedPlayerCounts();
                 }
             }
         }
     }
+}
 
     public function onSlapperDeletion(SNPCDeletionEvent $event): void {
     $entity = $event->getEntity();
